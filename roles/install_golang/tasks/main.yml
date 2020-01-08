@@ -1,28 +1,23 @@
 ---
-- name: ensure ~/bin existence
-  file:
-    state: directory
-    mode: 'u=rwx,go=rx'
-    dest: ./bin
-
 - name: install gimme
+  become: true
   get_url:
     url: https://raw.githubusercontent.com/travis-ci/gimme/master/gimme
-    dest: ./bin/gimme
+    dest: /usr/local/bin/gimme
     mode: 'u=rwx,go=rx'
 
 - name: set gimme for stable version
-  command: ./bin/gimme -r stable
+  command: gimme -r stable
   changed_when: false
 
 - name: see if golang was already installed by gimme
-  command: ./bin/gimme -l
+  command: gimme -l
   register: result
   ignore_errors: true
   changed_when: false
 
 - name: install golang
-  command: ./bin/gimme stable
+  command: gimme stable
   when: result.rc != 0
 
 - name: make sure /etc/profile.d exists

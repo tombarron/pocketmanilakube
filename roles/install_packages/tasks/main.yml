@@ -1,5 +1,6 @@
 ---
-- name: install packages
+# TODO: figure out CentOS 8 solution and limit the following to CentOS 7
+- name: install packages on CentOS
   become: yes
   package:
     state: latest
@@ -24,6 +25,35 @@
       - net-tools
       - vim
       - tree
+  when: ansible_distribution == 'CentOS'
+
+# TODO: figure combo for other versions of Fedora than 29-31
+- name: install packages on Fedora
+  become: yes
+  package:
+    state: latest
+    name: "{{ packages }}"
+  vars:
+    - packages:
+      - qemu-kvm
+      - qemu-img
+      - libvirt
+      - git
+      - python3-devel
+      - python3-libvirt
+      - libvirt-client
+      - gcc
+      - gcc-c++
+      - make
+      - ansible
+      - redhat-rpm-config
+      - tmux
+      - wget
+      - net-tools
+      - vim
+      - tree
+  when: ansible_distribution == 'Fedora'
+
 - name: update packages
   become: yes
   package:
