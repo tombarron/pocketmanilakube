@@ -1,0 +1,10 @@
+[local]
+localhost
+
+[ubuntu-devstack]
+192.168.18.16
+
+[ubuntu-devstack:vars]
+  ansible_ssh_user = vagrant
+  ansible_private_key_file=".vagrant/machines/ubuntu-devstack/libvirt/private_key"
+  ansible_ssh_common_args='-o StrictHostKeyChecking=no'

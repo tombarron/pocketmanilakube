@@ -1,0 +1,98 @@
+- name: ensure k8s.io directory
+  file:
+    path: workspace/src/k8s.io
+    state: directory
+
+- name: get the openstack-cloud-provider repository
+  git:
+    repo: 'https://github.com/kubernetes/cloud-provider-openstack'
+    dest: workspace/src/k8s.io/cloud-provider-openstack
+    update: no
+
+- name: make manila csi plugin
+  command: make manila-csi-plugin
+  args:
+    chdir: workspace/src/k8s.io/cloud-provider-openstack
+    creates: manila-csi-plugin
+
+- name: check for fresh manila-csi-plugin build
+  stat:
+    path: workspace/src/k8s.io/cloud-provider-openstack/manila-csi-plugin
+  register:
+    result
+
+- name: build manila csi plugin docker image
+  shell: |
+   mv manila-csi-plugin cluster/images/manila-csi-plugin/ &&
+    docker build -t manila-csi-plugin cluster/images/manila-csi-plugin
+  args:
+    chdir: workspace/src/k8s.io/cloud-provider-openstack
+  when: result.stat.exists == true
+
+- name: load manila csi plugin image to kind image
+  command: kind load docker-image --name manila-kube manila-csi-plugin:latest
+
+# Pull and load NFS CSI plugin image now so that the actual deployment 
+# doesn't have to retry getting it.
+- name: pull (protocol partner) nfs csi node plugin image
+  command: docker pull quay.io/k8scsi/nfsplugin:canary
+- name: load (protocol partner) nfs csi node plugin to kind
+  command: kind load docker-image --name manila-kube quay.io/k8scsi/nfsplugin:canary
+
+- name: ensure manifests directory
+  file:
+    path: workspace/manifests
+    state: directory
+
+- name: copy manifests to target host
+  copy:
+    src: "{{ item }}"
+    dest: workspace/manifests
+    mode: 'u=rw,go=r'
+  with_items:
+    - nfs-csi-node-plugin-deployment.yaml
+    - override-helm-values.yaml
+
+- name: deploy nfs csi node plugin
+  command: |
+    kubectl apply -f nfs-csi-node-plugin-deployment.yaml
+  args:
+    chdir: workspace/manifests
+
+- name: create helm chart for manila-csi plugin
+  shell: |
+    helm template examples/manila-csi-plugin/helm-deployment --name sharedstorage \
+      -f "{{ ansible_env.HOME }}/workspace/manifests/override-helm-values.yaml" \
+      > manila-csi-chart.yaml
+  args:
+    chdir: workspace/src/k8s.io/cloud-provider-openstack
+
+- name: deploy manila csi plugin helm chart
+  command: kubectl apply -f manila-csi-chart.yaml
+  args:
+    chdir: workspace/src/k8s.io/cloud-provider-openstack
+
+- name: generate csi-manila-secrets
+  shell: |
+    source "{{ ansible_env.HOME }}/workspace/Vagrant/demorc"
+    examples/manila-provisioner/generate-secrets.sh -n csi-manila-secrets |\
+      grep -v ': ""' > csi-manila-secrets.yaml
+    kubectl apply -f csi-manila-secrets.yaml
+  args:
+    chdir: workspace/src/k8s.io/cloud-provider-openstack
+
+- name: create storage class
+  command: kubectl apply -f examples/manila-csi-plugin/nfs/dynamic-provisioning/storageclass.yaml
+  args:
+    chdir: workspace/src/k8s.io/cloud-provider-openstack
+
+- name: wait for snapshot controller to be ready
+  shell: |
+    timeout 300 bash -c 'while [[ -z $(kubectl api-resources --api-group=snapshot.storage.k8s.io -o=name) ]]; do sleep 1; done'
+
+- name: create snapshot class
+  command: kubectl apply -f examples/manila-csi-plugin/nfs/snapshot/snapshotclass.yaml
+  args:
+    chdir: workspace/src/k8s.io/cloud-provider-openstack
+
+

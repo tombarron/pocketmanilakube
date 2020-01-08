@@ -1,0 +1,11 @@
+---
+- name: install libvirt-vagrant on CentOS
+  import_role:
+    name: install_libvirt_vagrant_from_hashicorp
+  when: ansible_distribution == 'CentOS'
+
+- name: install libvirt-vagrant for Fedora
+  import_role:
+    name: install_libvirt_vagrant_for_fedora
+  when: ansible_distribution == 'Fedora'
+

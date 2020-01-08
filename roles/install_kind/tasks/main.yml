@@ -1,0 +1,19 @@
+- name: install kind
+  become: true
+  get_url:
+    url: "https://github.com/kubernetes-sigs/kind/releases/download/v0.6.0/kind-Linux-amd64"
+    dest: /usr/local/bin/kind
+    mode: 'u=rwx,go=rx'
+
+- name: get kubernetes release
+  uri:
+    url: https://storage.googleapis.com/kubernetes-release/release/stable.txt
+    return_content: yes
+  register: kubernetes_release
+
+- name: install kubectl
+  become: true
+  get_url:
+    url: "https://storage.googleapis.com/kubernetes-release/release/{{ kubernetes_release.content | replace('\n', '') }}/bin/linux/amd64/kubectl"
+    dest: /usr/local/bin/kubectl
+    mode: 'u=rwx,go=rx'

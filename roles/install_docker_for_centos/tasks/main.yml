@@ -1,0 +1,31 @@
+- name: check if docker ce repo is already_enabled
+  yum:
+    list: repos
+  failed_when: false
+  changed_when: false
+  register: result
+
+- name: install docker ce yum repo
+  become: yes
+  command: yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+  when: "'docker-ce-stable' not in result | json_query('results[*].repoid')"
+
+- name: install docker ce
+  become: yes
+  yum: name=docker-ce state=present disable_gpg_check=yes
+
+- name: enable and start docker service
+  become: yes
+  service: name={{ item }} state=started enabled=yes
+  with_items:
+    - docker
+
+- name: add regular user to docker group
+  become: yes
+  user:
+    name: "{{ regular_user }}"
+    append: yes
+    groups: docker
+
+- name: reset ssh connection for the group addition to take effect
+  meta: reset_connection

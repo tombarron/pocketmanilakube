@@ -1,0 +1,10 @@
+- name: install helm binaries
+  shell: |
+   curl -L https://git.io/get_helm.sh | bash
+  args:
+    creates: /usr/local/bin/helm
+
+- name: init helm client (no tiller)
+  command: helm init --client-only
+  args:
+    creates: ./.helm

@@ -1,0 +1,10 @@
+- name: Prepare workspace directory
+  file:
+    path: '{{ ansible_user_dir }}/workspace'
+    state: directory
+
+- name: Prepare src directory
+  file:
+    path: '{{ ansible_user_dir }}/workspace/src'
+    state: directory
+

@@ -1,0 +1,38 @@
+---
+  - name: debug
+    debug:
+      var: ansible_distribution_major_version
+
+  # Note that ``kind`` does not yet support podman, we need docker
+  - name: Ensure Fedora has old cgroup v1 for docker
+    assert:
+      that:
+        - "{{ yes_I_really_reverted_to_cgroup_v1 }} == True"
+      msg: |
+        Fedora 31 requires cgroup v1 for docker.
+        If you want, set this as a kernel option,
+        reboot, and set yes_I_really_reverted_to_cgroup_v1
+        to True in inventory.yml, then re-run the playbook.
+        See:
+          https://fedoraproject.org/wiki/Common_F31_bugs#Docker_package_no_longer_available_and_will_not_run_by_default_.28due_to_switch_to_cgroups_v2.29
+    when: ansible_distribution_major_version >= '31'
+
+  - name: install moby-engine
+    become: yes
+    yum: name=moby-engine state=present
+
+  - name: enable and start docker service
+    become: yes
+    service: name={{ item }} state=started enabled=yes
+    with_items:
+      - docker
+
+  - name: add regular user to docker group
+    become: yes
+    user:
+      name: "{{ regular_user }}"
+      append: yes
+      groups: docker
+
+  - name: reset ssh connection for the group addition to take effect
+    meta: reset_connection

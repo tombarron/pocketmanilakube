@@ -1,0 +1,12 @@
+---
+all:
+  hosts:
+    <label-for-your-host-goes-here>:
+      ansible_host: <ip or fqdn of target>
+      #regular_user: "{{ lookup('env', 'USER') }}"
+      regular_user: <username>
+  vars:
+    home: "{{ lookup('env', 'HOME') }}"
+    pubkey_path: "{{ home }}/.ssh/id_rsa.pub"
+    pubkey: "{{ lookup('file', '{{ pubkey_path }}') }}"
+

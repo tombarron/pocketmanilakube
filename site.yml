@@ -1,0 +1,83 @@
+---
+
+- name: "manilakube playbook"
+  hosts: all
+  remote_user: "{{ regular_user }}"
+
+  tasks:
+
+  # Install the needed
+  #
+  - name: install packages
+    import_role:
+      name: install_packages
+    tags:
+      - install_packages
+
+  - name: install golang
+    import_role:
+      name: install_golang
+    tags:
+      - install_golang
+
+  - name: install docker
+    import_role:
+      name: install_docker
+    tags:
+      - install_docker
+
+  - name: install kind
+    import_role:
+      name: install_kind
+    tags:
+      - install_kind
+
+  - name: install helm
+    import_role:
+      name: install_helm
+    tags:
+      - install_helm
+
+  - name: install libvirt-vagrant
+    import_role:
+      name: install_libvirt_vagrant
+    tags:
+      - install_libvirt_vagrant
+
+  - name: init_workspace
+    import_role:
+      name: init_workspace
+    tags:
+      - init_workspace
+
+  # Deploy Manila with integrated Ceph Cluster
+  #
+  - name: setup devstack VM running Manila
+    import_role:
+      name: setup_devstack_vm
+    tags:
+      - setup_devstack_vm
+
+  - name: install OpenStack and Manila clients
+    import_role:
+      name: install_openstack_clients
+    tags:
+      - install_openstack_clients
+
+  # Deploy K8s cluster
+  #
+  - name: deploy K8s cluster
+    import_role:
+      name: deploy_k8s_cluster
+    tags:
+      - deploy_k8s_cluster
+
+  # Deploy Manila CSI plugin in the K8s cluster
+  #
+  - name: build manila csi
+    import_role:
+      name: build_manila_csi
+    tags:
+      - build_manila_csi
+
+

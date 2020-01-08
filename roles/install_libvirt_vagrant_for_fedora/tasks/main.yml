@@ -1,0 +1,33 @@
+- name: install libvirt-vagrant
+  become: yes
+  yum:
+    name: vagrant-libvirt
+    state: present
+
+- name: install vagrant and its dependencies
+  become: yes
+  command: dnf -y install @vagrant
+
+- name: ensure libvirtd is enabled and started
+  become: yes
+  service: name=libvirtd state=started enabled=yes
+
+- name: List installed Vagrant plugins
+  shell: "vagrant plugin list"
+  changed_when: False
+  register: vagrant_initial_plugins_list
+
+- name: Install Vagrant plugins
+  shell: "vagrant plugin install vagrant-libvirt"
+  when:
+    - '"vagrant-libvirt" not in vagrant_initial_plugins_list.stdout'
+
+- name: add regular user to libvirt group
+  become: yes
+  user:
+    name: "{{ regular_user }}"
+    append: yes
+    groups: libvirt
+
+- name: reset ssh connection for the group addition to take effect
+  meta: reset_connection

@@ -1,0 +1,64 @@
+- name: ensure directory for Vagrant stuff
+  file:
+    state: directory
+    path: "{{ ansible_env.HOME }}/workspace/Vagrant"
+    mode: 'u=rwx,go=rx'
+
+- name: copy Vagrantfile, etc. to target host
+  copy:
+    src: "{{ item }}"
+    dest: "{{ ansible_env.HOME }}/workspace/Vagrant/"
+    mode: 'u=rw,go=r'
+  with_items:
+    - Vagrantfile
+    - ansible-provisioner.yml
+    - local.conf
+    - ansible.cfg
+    - hosts
+
+- name: check if VM has already been launched
+  command: vagrant status
+  failed_when: false
+  changed_when: false
+  register: result
+  args:
+    chdir: "{{ ansible_env.HOME }}/workspace/Vagrant"
+
+- name: run Vagrant on target to launch devstack VM
+  command: vagrant up --no-provision
+  args:
+    chdir: "{{ ansible_env.HOME }}/workspace/Vagrant"
+  when: result.stdout|regex_search('The Libvirt domain is not created')
+
+- name: check if devstack has already been setup
+  command: vagrant ssh -c 'source devstack/openrc admin admin; openstack service list'
+  failed_when: false
+  changed_when: false
+  args:
+    chdir: "{{ ansible_env.HOME }}/workspace/Vagrant"
+  register: result
+
+- name: debug
+  debug:
+    var: result
+
+- name: install and run devstack on the VM
+  command: vagrant provision
+  args:
+    chdir: "{{ ansible_env.HOME }}/workspace/Vagrant"
+  when: result.rc != 0
+
+- name: fetch admin credentials file
+  command: ansible ubuntu-devstack -m fetch -a 'src=adminrc dest=adminrc flat=true'
+  args:
+    chdir: "{{ ansible_env.HOME }}/workspace/Vagrant"
+  register: result
+  changed_when: result.rc ==0 and result.stdout | regex_findall('changed.* true')
+
+- name: fetch demo credentials file
+  command: ansible ubuntu-devstack -m fetch -a 'src=demorc dest=demorc flat=true'
+  args:
+    chdir: "{{ ansible_env.HOME }}/workspace/Vagrant"
+  register: result
+  changed_when: result.rc ==0 and result.stdout | regex_findall('changed.* true')
+

@@ -1,0 +1,22 @@
+---
+- name: ensure we have a wheel group
+  group:
+    name: wheel
+    state: present
+- name: allow 'wheel' group passwordless sudo
+  lineinfile:
+    dest: /etc/sudoers
+    state: present
+    regexp: '^%wheel'
+    line: '%wheel ALL=(ALL) NOPASSWD: ALL'
+    validate: visudo -cf %s
+- name: add regular user in 'wheel' group
+  user:
+    name: "{{ regular_user }}"
+    groups: wheel
+    append: yes
+- name: setup ssh login to the normal user from local user
+  authorized_key:
+    user: "{{ regular_user }}"
+    state: present
+    key: "{{ pubkey }}"

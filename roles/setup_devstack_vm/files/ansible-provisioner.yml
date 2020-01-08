@@ -1,0 +1,90 @@
+---
+- hosts: all
+
+  tasks:
+
+  - name: install base packages
+    become: yes
+    package:
+      state: latest
+      name: "{{ packages }}"
+    vars:
+      - packages:
+        - aptitude
+
+  - name: update packages
+    become: yes
+    package:
+      state: latest
+      name: "*"
+
+  - name: install packages
+    become: yes
+    package:
+      state: latest
+      name: "{{ packages }}"
+    vars:
+      - packages:
+        - python3
+        - nfs-common
+        - git
+        - tmux
+        - wget
+        - net-tools
+        - vim
+        - haveged
+
+  # VMs need good soruce of entropy
+  - name: ensure haveged is started
+    become: yes
+    systemd:
+      name: haveged
+      enabled: yes
+      masked: no
+      state: started
+
+  - name: clone devstack
+    git: repo=https://git.openstack.org/openstack-dev/devstack
+         dest={{ ansible_env.HOME }}/devstack
+         update=no
+
+  - name: setup local.conf
+    action: copy
+      src=local.conf
+      dest={{ ansible_env.HOME }}/devstack/local.conf
+      mode=0644
+      owner={{ansible_env.USER}}
+
+  # devstack wants to use its own pip-installed python-setuptools
+  - name: uninstall OS python-setuptools
+    become: yes
+    package:
+      name: python-setuptools
+      state: absent
+
+  - name: check if manila-share service is already running
+    command: systemctl status devstack@m-shr
+    failed_when: false
+    register: result
+
+  # devstack is not really idempotent and there is really no
+  # guarantee that re-running it will help if the share service
+  # isn't running but at least we ensure not to run it again if
+  # manila share service is running
+  - name: run devstack
+    command: "{{ ansible_env.HOME }}/devstack/stack.sh"
+    when: result.rc != 0
+
+  - name: generate admin credentials
+    shell: |
+      source ./devstack/openrc admin admin
+      env | awk '/^OS_/{printf "export %s\n", $0}' > adminrc
+    args:
+      executable: /bin/bash
+
+  - name: generate demo credentials
+    shell: |
+      source ./devstack/openrc demo demo
+      env | awk '/^OS_/{printf "export %s\n", $0}' > demorc
+    args:
+      executable: /bin/bash

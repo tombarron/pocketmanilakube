@@ -1,0 +1,7 @@
+---
+nameOverride: manila-csi
+shareProtocols:
+  - protocolSelector: NFS
+    fwdNodePluginEndpoint:
+      dir: /var/lib/kubelet/plugins/csi-nfsplugin
+      sockFile: csi.sock

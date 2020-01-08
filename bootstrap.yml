@@ -1,0 +1,14 @@
+---
+
+- name: "bootstrap playbook"
+  hosts: c7
+
+  tasks:
+  # Ensure that "regular user" exists on the
+  # target host, is in group wheel, and has passwordless
+  # sudo.
+  - name: "bootstrap regular user {{ regular_user }}"
+    become: true
+    import_role:
+      name: setup_regular_user
+

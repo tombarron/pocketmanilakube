@@ -1,0 +1,23 @@
+- name: ensure manifests directory
+  file:
+    path: workspace/manifests
+    state: directory
+
+- name: copy manifest to target host
+  copy:
+    src: kind-cluster.yaml
+    dest: workspace/manifests
+    mode: 'u=rw,go=r'
+
+- name: is K8s cluster already running?
+  command: kind get clusters
+  failed_when: false
+  changed_when: false
+  register: result
+- debug:
+    var: result
+
+- name: deploy K8s cluster via kind
+  command:
+    kind create cluster --name manila-kube --config workspace/manifests/kind-cluster.yaml
+  when: result.stdout != 'manila-kube'

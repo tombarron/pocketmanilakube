@@ -1,0 +1,38 @@
+
+# See  https://redhatnordicssa.github.io/install-Vagrant-and-libvirt-KVM-on-on-rhel
+- name: install libvirt-vagrant and its dependencies
+  become: yes
+  yum:
+    name: "{{ items }}"
+    state: present
+  vars:
+    - items:
+      - https://releases.hashicorp.com/vagrant/2.2.6/vagrant_2.2.6_x86_64.rpm
+      - ruby-devel
+      - gcc
+      - libvirt-devel
+      - ansible
+
+- name: List installed Vagrant plugins
+  shell: "vagrant plugin list"
+  changed_when: False
+  register: vagrant_initial_plugins_list
+
+- name: Install Vagrant plugins
+  shell: "vagrant plugin install vagrant-libvirt"
+  when:
+    - '"vagrant-libvirt" not in vagrant_initial_plugins_list.stdout'
+
+- name: enable and start libvirt service
+  become: yes
+  service: name=libvirtd state=started enabled=yes
+
+- name: add regular user to libvirt group
+  become: yes
+  user:
+    name: "{{ regular_user }}"
+    append: yes
+    groups: libvirt
+
+- name: reset ssh connection for the group addition to take effect
+  meta: reset_connection

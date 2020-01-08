@@ -1,0 +1,50 @@
+---
+  - name: see if we already have a local user install of pip
+    command: "ls {{ ansible_env.HOME }}/.local/bin/pip"
+    changed_when: false
+    ignore_errors: true
+    register: result
+
+  - name: local user install of pip
+    shell: |
+      curl https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py
+      python /tmp/get-pip.py --user
+    when: result.rc != 0
+
+  - name: install manila client
+    command: "{{ ansible_env.HOME}}/.local/bin/pip install --user python-manilaclient"
+    args:
+      creates: "{{ ansible_env.HOME }}/.local/bin/manila"
+
+  - name: install openstack client
+    command: "{{ ansible_env.HOME}}/.local/bin/pip install --user python-openstackclient"
+    args:
+      creates: "{{ ansible_env.HOME }}/.local/bin/openstack"
+
+  # See  https://ask.openstack.org/en/question/120582/importerror-cannot-import-name-decorate/
+  - name: uninstall yum python-decorator
+    become: true
+    yum:
+      state: absent
+      name: python-decorator
+  - name: pip install python decorate library
+    command: "{{ ansible_env.HOME}}/.local/bin/pip install --user decorate"
+    args:
+      creates: "{{ ansible_env.HOME }}/.local/bin/decorate"
+
+  - name: setup admin client credentials file
+    shell: |
+      vagrant ssh -c 'source ~/devstack/openrc admin admin > /dev/null; env' |\
+      grep '^OS' | sed 's/\r$//' | sed 's/^OS/export OS/' > adminrc
+    args:
+      chdir: "{{ ansible_env.HOME }}/workspace/Vagrant"
+      creates: "{{ ansible_env.HOME }}/workspace/Vagrant/adminrc"
+
+  - name: setup demo client credentials file
+    shell: |
+      vagrant ssh -c 'source ~/devstack/openrc demo demo > /dev/null; env' |\
+      grep '^OS' | sed 's/\r$//' | sed 's/^OS/export OS/' > demorc
+    args:
+      chdir: "{{ ansible_env.HOME }}/workspace/Vagrant"
+      creates: "{{ ansible_env.HOME }}/workspace/Vagrant/demorc"
+

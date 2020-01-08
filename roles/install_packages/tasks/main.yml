@@ -1,0 +1,31 @@
+---
+- name: install packages
+  become: yes
+  package:
+    state: latest
+    name: "{{ packages }}"
+  vars:
+    - packages:
+      - qemu-kvm
+      - qemu-img
+      - libvirt
+      - git
+      - python-devel
+      - python
+      - libvirt-python
+      - libvirt-client
+      - gcc
+      - gcc-c++
+      - make
+      - ansible
+      - redhat-rpm-config
+      - tmux
+      - wget
+      - net-tools
+      - vim
+      - tree
+- name: update packages
+  become: yes
+  package:
+    state: latest
+    name: "*"

@@ -1,0 +1,43 @@
+---
+- name: ensure ~/bin existence
+  file:
+    state: directory
+    mode: 'u=rwx,go=rx'
+    dest: ./bin
+
+- name: install gimme
+  get_url:
+    url: https://raw.githubusercontent.com/travis-ci/gimme/master/gimme
+    dest: ./bin/gimme
+    mode: 'u=rwx,go=rx'
+
+- name: set gimme for stable version
+  command: ./bin/gimme -r stable
+  changed_when: false
+
+- name: see if golang was already installed by gimme
+  command: ./bin/gimme -l
+  register: result
+  ignore_errors: true
+  changed_when: false
+
+- name: install golang
+  command: ./bin/gimme stable
+  when: result.rc != 0
+
+- name: make sure /etc/profile.d exists
+  become: yes
+  file:
+    path: /etc/profile.d
+    state: directory
+    owner: root
+    group: root
+    mode: 'u=rwx,go=rx'
+
+- name: export Go language SDK environment variables
+  become: yes
+  shell: |
+   cp ./.gimme/envs/latest.env /etc/profile.d/golang.sh
+   chmod 0644 /etc/profile.d/golang.sh
+  args:
+    creates: /etc/profile.d/golang.sh

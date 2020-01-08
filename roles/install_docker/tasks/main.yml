@@ -1,0 +1,10 @@
+---
+  - name: setup docker for CentOS distribution
+    import_role:
+      name: install_docker_for_centos
+    when: ansible_distribution == 'CentOS'
+
+  - name: setup docker for Fedora distribution
+    import_role:
+      name: install_docker_for_fedora
+    when: ansible_distribution == 'Fedora'
