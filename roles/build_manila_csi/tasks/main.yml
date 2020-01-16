@@ -74,12 +74,22 @@
 
 - name: generate csi-manila-secrets
   shell: |
+    #source "{{ ansible_env.HOME }}/workspace/Vagrant/adminrc"
     source "{{ ansible_env.HOME }}/workspace/Vagrant/demorc"
-    examples/manila-provisioner/generate-secrets.sh -n csi-manila-secrets |\
-      grep -v ': ""' > csi-manila-secrets.yaml
-    kubectl apply -f csi-manila-secrets.yaml
-  args:
-    chdir: workspace/src/k8s.io/cloud-provider-openstack
+    cat << YAML | kubectl create -f -
+        apiVersion: v1
+        kind: Secret
+        metadata:
+          name: csi-manila-secrets
+          namespace: default
+        stringData:
+          os-authURL: "$OS_AUTH_URL"
+          os-region: "$OS_REGION_NAME"
+          os-userName: "$OS_USERNAME"
+          os-password: "$OS_PASSWORD"
+          os-projectName: "$OS_PROJECT_NAME"
+          os-domainID: "$OS_USER_DOMAIN_ID"
+    YAML
 
 - name: create storage class
   command: kubectl apply -f examples/manila-csi-plugin/nfs/dynamic-provisioning/storageclass.yaml
