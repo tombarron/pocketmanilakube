@@ -1,0 +1,21 @@
+---
+
+- name: "Redeploy Kind Cluster and Manila CSI"
+  hosts: all
+  remote_user: "{{ regular_user }}"
+
+  tasks:
+
+  - name: clean up old manila-kube k8s cluster
+    command: kind delete cluster --name manila-kube
+
+  - name: deploy manila-kube K8s cluster via kind
+    command:
+      kind create cluster --name manila-kube --config kind-cluster.yaml
+    args:
+     chdir: "{{ ansible_env.HOME }}/workspace/manifests"
+
+  - name: build manila csi
+    import_role:
+      name: build_manila_csi
+

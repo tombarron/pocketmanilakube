@@ -29,15 +29,15 @@ Manila-csi plugins and the partner NFS csi node plugin are deployed:
     pod/sharedstorage-manila-csi-nodeplugin-8tfzg     2/2     Running   0          22h
     pod/sharedstorage-manila-csi-nodeplugin-fcppm     2/2     Running   0          22h
     pod/sharedstorage-manila-csi-nodeplugin-pdt2f     2/2     Running   0          22h
-    
+
     NAME                                                TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)     AGE
     service/kubernetes                                  ClusterIP   10.96.0.1       <none>        443/TCP     22h
     service/sharedstorage-manila-csi-controllerplugin   ClusterIP   10.100.218.24   <none>        12345/TCP   22h
-    
+
     NAME                                                 DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE   NODE SELECTOR   AGE
     daemonset.apps/csi-nodeplugin-nfsplugin              3         3         3       3            3           <none>          22h
     daemonset.apps/sharedstorage-manila-csi-nodeplugin   3         3         3       3            3           <none>          22h
-    
+
     NAME                                                         READY   AGE
     statefulset.apps/sharedstorage-manila-csi-controllerplugin   1/1     22h
 
@@ -63,7 +63,15 @@ machine:
     +--------------------------------------+--------+------+-------------+-----------+-----------+-----------------+------+-------------------+
     [stack@c7 ~]$
 
-## How To Deploy
+These clients interact with a minimal
+[devstack](https://docs.openstack.org/devstack/latest/) in which only
+Manila and the services it requires (like Keystone) are deployed.  (If
+you want to run a fuller OpenStack, edit
+*roles/setup_devstack_vm/files/local.conf* and update
+*roles/setup_devstack_vm/files/Vagrantfile* to allocate more resources
+to the devstack VM).
+
+ ## How To Deploy
 
 1. Copy *inventory.yml.sample* to *inventory.yml*
 
@@ -78,15 +86,21 @@ as the non-root user there who will own the deployment.
 You can create pvcs and pods using them using manifests like those in the cloud provider
 openstack source under *examples/manila-csi-plugin/nfs/dynamic-provisioning/*
 
-Source for this repository is cloned under *~/workspace/src/* on the deployment target:
+Source for the cloud provider openstack repository is cloned under
+*~/workspace/src/* on the deployment target:
 
     [stack@c7 ~]$ cd workspace/src/k8s.io/cloud-provider-openstack/
     [stack@c7 cloud-provider-openstack]$ git remote -v
     origin	https://github.com/kubernetes/cloud-provider-openstack (fetch)
     origin	https://github.com/kubernetes/cloud-provider-openstack (push)
 
-You can modify/patch the manila-csi source code here and run **ansible-playbook site.yml --tags build_manila_csi**
-to build and re-deploy a new manila-csi image with the changes. 
+You can modify/patch the manila-csi source code here and run
+**ansible-playbook redeploy-manila_csi.yml** to rebuild the manila-csi
+image with the changes and redeploy the manila-kube k8s cluster with
+the updated image.  We re-deploy the K8s cluster rather than just 
+reloading the image in order to avoid test bugs due to state in the 
+cluster prior to the image change.  It's pretty fast with a *kind* 
+cluster -- takes a bit over 5 minutes on my laptop.
 
 To patch or modify manila itself, login to the VM running devstack manila:
 
@@ -98,17 +112,23 @@ To patch or modify manila itself, login to the VM running devstack manila:
     babel.cfg  contrib     devstack          etc  LICENSE      manila                 playbooks        README.rst  requirements.txt  setup.py   tools
     vagrant@ubuntu-devstack:~$
 
-After modifying manila source code, run **sudo systemctl restart devstack@m\*** on the devstack VM to run with your changes.
+On the VM, you can modify the manila source code at /opt/stack/manila
+or cherry-pick pending reviews, etc.  Run **sudo systemctl restart
+devstack@m\*** on the devstack VM to run with your changes.
+
+If you need to tear down the devstack VM itself and rebuild you can
+run **ansible-playbook redeploy-devstack-vm.yml**.
 
 ## Pre-requisites
 
 To run these playbooks as is you need to be able to ssh to target
-machines as a regular, non-root user with passwordless sudo privileges.
-This is the *regular_user* defined in inventory.yml for each target
-host defined there, and may or may not be the same as the user running
-the playbook.  (To run the bootstrap the user running the playbook must
-be able to ssh to the target, of course, and will need to be able to 
-sudo on the target, but does not need to be in wheel group, etc.)
+machines as a regular, non-root user with passwordless sudo
+privileges.  This is the *regular_user* defined in inventory.yml for
+each target host defined there, and may or may not be the same as the
+user running the playbook.  (To run the bootstrap the user running the
+playbook must be able to ssh to the target, of course, and will need
+to be able to sudo on the target, but does not need to be in wheel
+group, etc.)
 
 This user can be set up by running
 
@@ -118,11 +138,36 @@ when the *regular_user* defined in inventory.yml is not the same as the
 user running the playbook and/or when that user is not yet set up on the
 remote machine with appropriate privileges.
 
+## Note on deployment targets
+
+I've deployed against CentOS 7 and Fedora 29 and Fedora 31 targets.
+More RAM on the target is better, but it worked for me on an 8GB RAM
+CentOS 7 machine.
+
+If you want to deploy on other targets, open a github issue on this
+repository and I'll try to help make it happen.
+
+## Note on packaging and idempotence
+
+Devstack installs a lot of software via *pip*.  In order to avoid
+polluting the target machine, we install devstack in a VM rather than on
+the target machine itself.
+
+devstack's setup script is not idempotent.  If you have failures you
+may need to run vagrant to blow away the VM and re-run the deployment.
+See the convenience tags in site.yml.
+
+golang executables and shell scripts don't have library dependencies
+the so are deployed directly on the target machine at */usr/local/bin*
+or *~/bin* so they don't conflict or overwrite system installs.
+
+We install the python manilaclient and openstack client on the target
+machine for convenience but do *user* pip installs so everything is
+under *~/.local* and does not overwrite any system installed software.
+
 ## TODO
 
-* Make sure this stuff actually works ...
-
-* Try deploying Ceph outside of devstack via Rook/Ceph (probably in an independent but kind-deployed K8s cluster, de-coupled from manila-kube).
+* Try deploying Ceph outside of devstack via Rook/Ceph (probably in an independent but kind-deployed K8s cluster, de-coupled from the manila-kube k8s cluster).
 
 * Eliminate the devstack VM, incrementally
 
