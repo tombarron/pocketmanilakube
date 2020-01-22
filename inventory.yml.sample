@@ -5,6 +5,10 @@ all:
       ansible_host: <ip or fqdn of target>
       #regular_user: "{{ lookup('env', 'USER') }}"
       regular_user: <username>
+      # For Fedora 31 or higher until we can use podman for kind
+      yes_I_really_reverted_to_cgroup_v1: True
+    <label-for-next-host>:
+      ... and so on ...
   vars:
     home: "{{ lookup('env', 'HOME') }}"
     pubkey_path: "{{ home }}/.ssh/id_rsa.pub"

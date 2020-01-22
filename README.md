@@ -1,4 +1,4 @@
-# Pocket Manila Kube 
+# Pocket Manila Kube
 
 This "pocket" manila kube is based on the original [manila kube](https://github.com/tombarron/manila-kube), but
 whereas the original deploys Kubernetes nodes on VMs running in an OpenStack cloud,
@@ -6,7 +6,7 @@ this pocket version uses [kind](https://kind.sigs.k8s.io) to deploy on a single 
 a single VM is also deployed on that target machine, using Vagrant with the libvirt VM, for a minimal
 devstack.
 
-After the deployment the target machine has a *kind* based Kubernetes cluster with a single 
+After the deployment the target machine has a *kind* based Kubernetes cluster with a single
 control plane node and three workers:
 
     [stack@c7 ~]$ kind get clusters
@@ -143,6 +143,13 @@ remote machine with appropriate privileges.
 I've deployed against CentOS 7 and Fedora 29 and Fedora 31 targets.
 More RAM on the target is better, but it worked for me on an 8GB RAM
 CentOS 7 machine.
+
+*kind* does not yet work with *podman* yet, so we need to install
+*docker*.  Fedora 31 ships with cgroups v2, which is
+currently docker-incompatible.  So with Fedora 31 and higher you need to
+revert to cgroups v1 on the target machine before running this playbook,
+as explained in the
+[Fedora project wiki](https://fedoraproject.org/wiki/Common_F31_bugs#Docker_package_no_longer_available_and_will_not_run_by_default_.28due_to_switch_to_cgroups_v2.29).
 
 If you want to deploy on other targets, open a github issue on this
 repository and I'll try to help make it happen.
