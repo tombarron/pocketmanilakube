@@ -1,13 +1,16 @@
 ---
 all:
   hosts:
-    <label-for-your-host-goes-here>:
+    <label-for-your-target-host-goes-here>:
       ansible_host: <ip or fqdn of target>
+      # On the target, run as this user
       #regular_user: "{{ lookup('env', 'USER') }}"
       regular_user: <username>
+      # On the target, use this workspace for files
+      workspace: "/home/{{ regular_user  }}/manila-kube-workspace"
       # For Fedora 31 or higher until we can use podman for kind
       yes_I_really_reverted_to_cgroup_v1: True
-    <label-for-next-host>:
+    <label-for-next-target-host>:
       ... and so on ...
   vars:
     home: "{{ lookup('env', 'HOME') }}"

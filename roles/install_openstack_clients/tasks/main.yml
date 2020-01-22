@@ -37,14 +37,14 @@
       vagrant ssh -c 'source ~/devstack/openrc admin admin > /dev/null; env' |\
       grep '^OS' | sed 's/\r$//' | sed 's/^OS/export OS/' > adminrc
     args:
-      chdir: "{{ ansible_env.HOME }}/workspace/Vagrant"
-      creates: "{{ ansible_env.HOME }}/workspace/Vagrant/adminrc"
+      chdir: "{{ workspace }}/Vagrant"
+      creates: "{{ workspace }}/Vagrant/adminrc"
 
   - name: setup demo client credentials file
     shell: |
       vagrant ssh -c 'source ~/devstack/openrc demo demo > /dev/null; env' |\
       grep '^OS' | sed 's/\r$//' | sed 's/^OS/export OS/' > demorc
     args:
-      chdir: "{{ ansible_env.HOME }}/workspace/Vagrant"
-      creates: "{{ ansible_env.HOME }}/workspace/Vagrant/demorc"
+      chdir: "{{ workspace }}/Vagrant"
+      creates: "{{ workspace }}/Vagrant/demorc"
 

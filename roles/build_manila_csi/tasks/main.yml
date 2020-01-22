@@ -1,23 +1,23 @@
 - name: ensure k8s.io directory
   file:
-    path: workspace/src/k8s.io
+    path: "{{ workspace }}/src/k8s.io"
     state: directory
 
 - name: get the openstack-cloud-provider repository
   git:
     repo: 'https://github.com/kubernetes/cloud-provider-openstack'
-    dest: workspace/src/k8s.io/cloud-provider-openstack
+    dest: "{{ workspace }}/src/k8s.io/cloud-provider-openstack"
     update: no
 
 - name: make manila csi plugin
   command: make manila-csi-plugin
   args:
-    chdir: workspace/src/k8s.io/cloud-provider-openstack
+    chdir: "{{ workspace }}/src/k8s.io/cloud-provider-openstack"
     creates: manila-csi-plugin
 
 - name: check for fresh manila-csi-plugin build
   stat:
-    path: workspace/src/k8s.io/cloud-provider-openstack/manila-csi-plugin
+    path: "{{ workspace }}/src/k8s.io/cloud-provider-openstack/manila-csi-plugin"
   register:
     result
 
@@ -26,7 +26,7 @@
    mv manila-csi-plugin cluster/images/manila-csi-plugin/ &&
     docker build -t manila-csi-plugin cluster/images/manila-csi-plugin
   args:
-    chdir: workspace/src/k8s.io/cloud-provider-openstack
+    chdir: "{{ workspace }}/src/k8s.io/cloud-provider-openstack"
   when: result.stat.exists == true
 
 - name: load manila csi plugin image to kind image
@@ -41,13 +41,13 @@
 
 - name: ensure manifests directory
   file:
-    path: workspace/manifests
+    path: "{{ workspace }}/manifests"
     state: directory
 
 - name: copy manifests to target host
   copy:
     src: "{{ item }}"
-    dest: workspace/manifests
+    dest: "{{ workspace }}/manifests"
     mode: 'u=rw,go=r'
   with_items:
     - nfs-csi-node-plugin-deployment.yaml
@@ -57,25 +57,25 @@
   command: |
     kubectl apply -f nfs-csi-node-plugin-deployment.yaml
   args:
-    chdir: workspace/manifests
+    chdir: "{{ workspace }}/manifests"
 
 - name: create helm chart for manila-csi plugin
   shell: |
     helm template examples/manila-csi-plugin/helm-deployment --name sharedstorage \
-      -f "{{ ansible_env.HOME }}/workspace/manifests/override-helm-values.yaml" \
+      -f "{{ workspace }}/manifests/override-helm-values.yaml" \
       > manila-csi-chart.yaml
   args:
-    chdir: workspace/src/k8s.io/cloud-provider-openstack
+    chdir: "{{ workspace }}/src/k8s.io/cloud-provider-openstack"
 
 - name: deploy manila csi plugin helm chart
   command: kubectl apply -f manila-csi-chart.yaml
   args:
-    chdir: workspace/src/k8s.io/cloud-provider-openstack
+    chdir: "{{ workspace }}/src/k8s.io/cloud-provider-openstack"
 
 - name: generate csi-manila-secrets
   shell: |
-    #source "{{ ansible_env.HOME }}/workspace/Vagrant/adminrc"
-    source "{{ ansible_env.HOME }}/workspace/Vagrant/demorc"
+    #source "{{ workspace }}/Vagrant/adminrc"
+    source "{{ workspace }}/Vagrant/demorc"
     cat << YAML | kubectl create -f -
         apiVersion: v1
         kind: Secret
@@ -94,7 +94,7 @@
 - name: create storage class
   command: kubectl apply -f examples/manila-csi-plugin/nfs/dynamic-provisioning/storageclass.yaml
   args:
-    chdir: workspace/src/k8s.io/cloud-provider-openstack
+    chdir: "{{ workspace }}/src/k8s.io/cloud-provider-openstack"
 
 - name: wait for snapshot controller to be ready
   shell: |
@@ -103,6 +103,6 @@
 - name: create snapshot class
   command: kubectl apply -f examples/manila-csi-plugin/nfs/snapshot/snapshotclass.yaml
   args:
-    chdir: workspace/src/k8s.io/cloud-provider-openstack
+    chdir: "{{ workspace }}/src/k8s.io/cloud-provider-openstack"
 
 

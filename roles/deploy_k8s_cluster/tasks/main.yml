@@ -1,12 +1,12 @@
 - name: ensure manifests directory
   file:
-    path: workspace/manifests
+    path: "{{ workspace }}/manifests"
     state: directory
 
 - name: copy manifest to target host
   copy:
     src: kind-cluster.yaml
-    dest: workspace/manifests
+    dest: "{{ workspace }}/manifests"
     mode: 'u=rw,go=r'
 
 - name: is K8s cluster already running?
@@ -19,5 +19,5 @@
 
 - name: deploy K8s cluster via kind
   command:
-    kind create cluster --name manila-kube --config workspace/manifests/kind-cluster.yaml
+    kind create cluster --name manila-kube --config "{{ workspace }}/manifests/kind-cluster.yaml"
   when: not result.stdout|regex_search('manila-kube')

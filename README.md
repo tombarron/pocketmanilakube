@@ -76,8 +76,9 @@ to the devstack VM).
 1. Copy *inventory.yml.sample* to *inventory.yml*
 
 2. Edit *inventory.yml* to indicate the
-target machine or machines where you want manila kube deployed as well
-as the non-root user there who will own the deployment.
+target machine or machines where you want manila kube deployed, the
+non-root user there who will own the deployment, the target machine
+workspace, etc.
 
 3. Run **ansible-playbook site.yml** to deploy manila kube.
 
