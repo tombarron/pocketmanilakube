@@ -20,4 +20,4 @@
 - name: deploy K8s cluster via kind
   command:
     kind create cluster --name manila-kube --config workspace/manifests/kind-cluster.yaml
-  when: result.stdout != 'manila-kube'
+  when: not result.stdout|regex_search('manila-kube')
