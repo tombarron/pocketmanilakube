@@ -34,7 +34,7 @@
         - vim
         - haveged
 
-  # VMs need good soruce of entropy
+  # VMs need good source of entropy
   - name: ensure haveged is started
     become: yes
     systemd:
@@ -55,12 +55,16 @@
       mode=0644
       owner={{ansible_env.USER}}
 
-  # devstack wants to use its own pip-installed python-setuptools
-  - name: uninstall OS python-setuptools
+  # remove system packages that interfere with devstack's pip installs
+  - name: uninstall conflicting system packages
     become: yes
     package:
-      name: python-setuptools
+      name: "{{ packages }}"
       state: absent
+    vars:
+      - packages:
+        - python-setuptools
+        - python3-httplib2
 
   - name: check if manila-share service is already running
     command: systemctl status devstack@m-shr
