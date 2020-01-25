@@ -1,0 +1,76 @@
+- name: ensure manifests directory
+  file:
+    path: "{{ workspace }}/manifests"
+    state: directory
+
+- name: copy manifest to target host
+  copy:
+    src: rook_ceph_cluster.yaml
+    dest: "{{ workspace }}/manifests"
+    mode: 'u=rw,go=r'
+
+- name: is K8s cluster already running?
+  command: kind get clusters
+  failed_when: false
+  changed_when: false
+  register: result
+- debug:
+    var: result
+
+- name: deploy K8s cluster via kind
+  command:
+    kind create cluster --name rook-ceph --config "{{ workspace }}/manifests/kind-cluster.yaml"
+  when: not result.stdout|regex_search('rook-ceph')
+
+- name: configure Ceph storage common resources
+  command: |
+    kubectl apply -f https://raw.githubusercontent.com/rook/rook/release-1.2/cluster/examples/kubernetes/ceph/common.yaml
+
+- name: deploy the Rook Operator
+  command: |
+    kubectl apply -f https://raw.githubusercontent.com/rook/rook/release-1.2/cluster/examples/kubernetes/ceph/operator.yaml
+
+- name: deploy single file store OSD
+  shell: |
+    cat << YAML | kubectl apply -f -
+      apiVersion: ceph.rook.io/v1
+      kind: CephCluster
+      metadata:
+        name: rook-ceph
+        namespace: rook-ceph
+      spec:
+        cephVersion:
+          image: ceph/ceph:v14.2.6
+          allowUnsupported: true
+        dataDirHostPath: /var/lib/rook
+        skipUpgradeChecks: false
+        continueUpgradeAfterChecksEvenIfNotHealthy: false
+        mon:
+          count: 1
+          allowMultiplePerNode: true
+        dashboard:
+          enabled: true
+          ssl: true
+        monitoring:
+          enabled: false
+          rulesNamespace: rook-ceph
+        network:
+          hostNetwork: false
+        rbdMirroring:
+          workers: 0
+        crashCollector:
+          disable: false
+        mgr:
+          modules:
+          - name: pg_autoscaler
+            enabled: true
+        storage:
+          useAllNodes: true
+          useAllDevices: false
+          config:
+            databaseSizeMB: "1024"
+            journalSizeMB: "1024"
+            osdsPerDevice: "1"
+          directories:
+          - path: "/var/lib/rook"
+    YAML

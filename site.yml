@@ -81,3 +81,12 @@
       - build_manila_csi
 
 
+  # Deploy Rook-Ceph Cluster (Experimental)
+  #
+  - name: deploy_rook_ceph_cluster
+    import_role:
+      name: deploy_rook_ceph_cluster
+    when: deploy_rook_ceph_cluster
+    tags:
+      - deploy_rook_ceph_cluster
+
