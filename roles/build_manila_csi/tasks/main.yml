@@ -72,6 +72,10 @@
   args:
     chdir: "{{ workspace }}/src/k8s.io/cloud-provider-openstack"
 
+- name: clean csi-manila-secrets
+  command: kubectl delete secret csi-manila-secrets
+  failed_when: false
+
 - name: generate csi-manila-secrets
   shell: |
     #source "{{ workspace }}/Vagrant/adminrc"
@@ -91,6 +95,10 @@
           os-domainID: "$OS_USER_DOMAIN_ID"
     YAML
 
+- name: clean storage class
+  command: kubectl delete storageclass csi-manila-storageclass
+  failed_when: false
+
 - name: create storage class
   command: kubectl apply -f examples/manila-csi-plugin/nfs/dynamic-provisioning/storageclass.yaml
   args:
@@ -99,6 +107,10 @@
 - name: wait for snapshot controller to be ready
   shell: |
     timeout 300 bash -c 'while [[ -z $(kubectl api-resources --api-group=snapshot.storage.k8s.io -o=name) ]]; do sleep 1; done'
+
+- name: clean snapshot class
+  command: kubectl clean snapshotclass csi-manila-snapshotclass
+  failed_when: false
 
 - name: create snapshot class
   command: kubectl apply -f examples/manila-csi-plugin/nfs/snapshot/snapshotclass.yaml
