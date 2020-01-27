@@ -65,6 +65,7 @@
       - packages:
         - python-setuptools
         - python3-httplib2
+        - python3-pyasn1-modules
 
   - name: check if manila-share service is already running
     command: systemctl status devstack@m-shr
