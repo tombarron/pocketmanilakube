@@ -3,6 +3,9 @@
 
   tasks:
 
+  - name: refresh apt cache
+    command: "sudo apt-get update"
+
   - name: install base packages
     become: yes
     package:
