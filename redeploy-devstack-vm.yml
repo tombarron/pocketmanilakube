@@ -9,29 +9,29 @@
   - name: destroy the devstack VM
     command: vagrant destroy -f
     args:
-      chdir: "{{ ansible_env.HOME }}/workspace/Vagrant"
+      chdir: "{{ workspace }}/Vagrant"
 
   - name: run Vagrant on target to launch devstack VM
     command: vagrant up --no-provision
     args:
-      chdir: "{{ ansible_env.HOME }}/workspace/Vagrant"
+      chdir: "{{ workspace }}/Vagrant"
 
   - name: install and run devstack on the VM
     command: vagrant provision
     args:
-      chdir: "{{ ansible_env.HOME }}/workspace/Vagrant"
+      chdir: "{{ workspace }}/Vagrant"
 
   - name: fetch admin credentials file
     command: ansible ubuntu-devstack -m fetch -a 'src=adminrc dest=adminrc flat=true'
     args:
-      chdir: "{{ ansible_env.HOME }}/workspace/Vagrant"
+      chdir: "{{ workspace }}/Vagrant"
     register: result
     changed_when: result.rc ==0 and result.stdout | regex_findall('changed.* true')
 
   - name: fetch demo credentials file
     command: ansible ubuntu-devstack -m fetch -a 'src=demorc dest=demorc flat=true'
     args:
-      chdir: "{{ ansible_env.HOME }}/workspace/Vagrant"
+      chdir: "{{ workspace }}/Vagrant"
     register: result
     changed_when: result.rc ==0 and result.stdout | regex_findall('changed.* true')
 

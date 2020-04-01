@@ -42,10 +42,11 @@ Manila-csi plugins and the partner NFS csi node plugin are deployed:
     statefulset.apps/sharedstorage-manila-csi-controllerplugin   1/1     22h
 
 The *kubectl* and *kind* commands as used above are installed as well as *manila* and *openstack* clients.
-To use the latter source the *adminrc* or *demorc* credential files stored under *~/workspace/Vagrant* on the target
+To use the latter source the *adminrc* or *demorc* credential files 
+stored under *~/manila-kube-workspace/Vagrant* on the target
 machine:
 
-    [stack@c7 ~]$ source workspace/Vagrant/adminrc
+    [stack@c7 ~]$ source manila-kube-workspace/Vagrant/adminrc
     [stack@c7 ~]$ manila service-list
     +----+------------------+----------------------------+---------------+---------+-------+----------------------------+
     | Id | Binary           | Host                       | Zone          | Status  | State | Updated_at                 |
@@ -54,7 +55,7 @@ machine:
     | 2  | manila-scheduler | ubuntu-devstack            | nova          | enabled | up    | 2020-01-07T01:07:34.000000 |
     | 3  | manila-data      | ubuntu-devstack            | nova          | enabled | up    | 2020-01-07T01:07:36.000000 |
     +----+------------------+----------------------------+---------------+---------+-------+----------------------------+
-    [stack@c7 ~]$ source workspace/Vagrant/demorc
+    [stack@c7 ~]$ source manila-kube-workspace/Vagrant/demorc
     [stack@c7 ~]$ manila list
     +--------------------------------------+--------+------+-------------+-----------+-----------+-----------------+------+-------------------+
     | ID                                   | Name   | Size | Share Proto | Status    | Is Public | Share Type Name | Host | Availability Zone |
@@ -88,9 +89,9 @@ You can create pvcs and pods using them using manifests like those in the cloud 
 openstack source under *examples/manila-csi-plugin/nfs/dynamic-provisioning/*
 
 Source for the cloud provider openstack repository is cloned under
-*~/workspace/src/* on the deployment target:
+*~/manila-kube-workspace/src/* on the deployment target:
 
-    [stack@c7 ~]$ cd workspace/src/k8s.io/cloud-provider-openstack/
+    [stack@c7 ~]$ cd manila-kube-workspace/src/k8s.io/cloud-provider-openstack/
     [stack@c7 cloud-provider-openstack]$ git remote -v
     origin	https://github.com/kubernetes/cloud-provider-openstack (fetch)
     origin	https://github.com/kubernetes/cloud-provider-openstack (push)
@@ -105,7 +106,7 @@ cluster -- takes a bit over 5 minutes on my laptop.
 
 To patch or modify manila itself, login to the VM running devstack manila:
 
-    [stack@c7 ~]$ cd workspace/Vagrant
+    [stack@c7 ~]$ cd manila-kube-workspace/Vagrant
     [stack@c7 Vagrant]$ vagrant ssh
     Last login: Mon Jan  6 02:00:42 2020 from 192.168.18.1
     vagrant@ubuntu-devstack:~$ ls /opt/stack/manila

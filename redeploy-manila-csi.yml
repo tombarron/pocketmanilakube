@@ -13,7 +13,7 @@
     command:
       kind create cluster --name manila-kube --config kind-cluster.yaml
     args:
-     chdir: "{{ ansible_env.HOME }}/workspace/manifests"
+     chdir: "{{ workspace }}/manifests"
 
   - name: build manila csi
     import_role:
