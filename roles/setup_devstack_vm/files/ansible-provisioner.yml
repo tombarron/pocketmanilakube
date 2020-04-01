@@ -3,6 +3,9 @@
 
   tasks:
 
+  - name: refresh apt cache
+    command: "sudo apt-get update"
+
   - name: install base packages
     become: yes
     package:
@@ -33,6 +36,7 @@
         - net-tools
         - vim
         - haveged
+        - python3-dev
 
   # VMs need good source of entropy
   - name: ensure haveged is started
