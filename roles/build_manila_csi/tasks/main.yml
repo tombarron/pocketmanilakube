@@ -1,3 +1,22 @@
+- name: ensure kubernetes-csi directory
+  file:
+    path: "{{ workspace }}/src/github.com/kubernetes-csi"
+    state: directory
+
+- name: get the csi-driver-nfs repository
+  git:
+    repo: 'https://github.com/kubernetes-csi/csi-driver-nfs'
+    dest: "{{ workspace }}/src/github.com/kubernetes-csi/csi-driver-nfs"
+    update: no
+
+- name: build csi-driver-nfs plugin image
+  command: make container
+  args:
+    chdir: "{{ workspace }}/src/github.com/kubernetes-csi/csi-driver-nfs"
+
+- name: load (protocol partner) nfs csi node plugin to kind
+  command: kind load docker-image --name manila-kube nfsplugin:latest
+
 - name: ensure k8s.io directory
   file:
     path: "{{ workspace }}/src/k8s.io"
@@ -9,35 +28,20 @@
     dest: "{{ workspace }}/src/k8s.io/cloud-provider-openstack"
     update: no
 
-- name: make manila csi plugin
-  command: make manila-csi-plugin
+- name: make manila csi plugin image
+  command: make image-manila-csi-plugin
   args:
     chdir: "{{ workspace }}/src/k8s.io/cloud-provider-openstack"
-    creates: manila-csi-plugin
 
-- name: check for fresh manila-csi-plugin build
-  stat:
-    path: "{{ workspace }}/src/k8s.io/cloud-provider-openstack/manila-csi-plugin"
-  register:
-    result
+- name: get the docker image id
+  command: docker images -q k8scloudprovider/manila-csi-plugin\*
+  register: result
 
-- name: build manila csi plugin docker image
-  shell: |
-   mv manila-csi-plugin cluster/images/manila-csi-plugin/ &&
-    docker build -t manila-csi-plugin cluster/images/manila-csi-plugin
-  args:
-    chdir: "{{ workspace }}/src/k8s.io/cloud-provider-openstack"
-  when: result.stat.exists == true
+- debug:
+    var: result
 
 - name: load manila csi plugin image to kind image
-  command: kind load docker-image --name manila-kube manila-csi-plugin:latest
-
-# Pull and load NFS CSI plugin image now so that the actual deployment 
-# doesn't have to retry getting it.
-- name: pull (protocol partner) nfs csi node plugin image
-  command: docker pull quay.io/k8scsi/nfsplugin:canary
-- name: load (protocol partner) nfs csi node plugin to kind
-  command: kind load docker-image --name manila-kube quay.io/k8scsi/nfsplugin:canary
+  command: "kind load docker-image --name manila-kube {{ result.stdout }}"
 
 - name: ensure manifests directory
   file:
