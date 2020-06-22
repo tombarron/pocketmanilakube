@@ -40,8 +40,11 @@
 - debug:
     var: result
 
+- name: tag the local image to match what helm chart will expect
+  command: "docker tag {{ result.stdout }} k8scloudprovider/manila-csi-plugin:latest"
+
 - name: load manila csi plugin image to kind image
-  command: "kind load docker-image --name manila-kube {{ result.stdout }}"
+  command: kind load docker-image --name manila-kube k8scloudprovider/manila-csi-plugin:latest
 
 - name: ensure manifests directory
   file:
