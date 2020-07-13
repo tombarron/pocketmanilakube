@@ -68,7 +68,7 @@
 
 - name: create helm chart for manila-csi plugin
   shell: |
-    helm template examples/manila-csi-plugin/helm-deployment --name sharedstorage \
+    helm template charts/manila-csi-plugin --name sharedstorage \
       -f "{{ workspace }}/manifests/override-helm-values.yaml" \
       > manila-csi-chart.yaml
   args:
